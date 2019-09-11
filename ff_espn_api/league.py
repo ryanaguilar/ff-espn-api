@@ -367,4 +367,20 @@ class League(object):
         players = r.json()['players']
 
         return [Player(player) for player in players]
-            
+           
+    def _return_scoring_leaders(self):
+        params = {
+            'scoringPeriodId': 0,
+            'view': 'players_wl',
+        }
+
+        #endpoint = 'https://fantasy.espn.com/apis/v3/games/ffl/seasons/' + str(self.year) + '/players'
+        endpoint = 'https://fantasy.espn.com/apis/v3/games/ffl/seasons/2019/segments/0/leagues/372479?scoringPeriodId=1&view=kona_player_info'
+        r = requests.get(endpoint, params=params, cookies=self.cookies)
+        self.status = r.status_code
+
+        checkRequestStatus(self.status)
+
+        data = r.json()
+
+        return data
