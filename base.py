@@ -53,7 +53,33 @@ stats_map = {
 }
 
 class Player(dict):
-    def __init__(self, *arg, **kw):
-        super(Player, self).__init__(*arg, **kw)
-        self.__dict__ = lea
+    def __init__(self, playerlist, name):
+        super(Player, self).__init__(search_by_name(playerlist, name))
+        self.id = self['id']
+        self.name = self['player']['fullName']
+        self.stats = self['player']['stats'][-1]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
+        #self. = self['player']['stats']['stats'][]
 
