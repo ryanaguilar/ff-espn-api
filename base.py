@@ -9,13 +9,23 @@ espn_s2 = 'AEAaGZHXv3kXMPXr4viwCvBYoTDLFWY8fQG7LQSLknXFpqPSSFRH2W0MSAXTTEGMWJg00
 SWID = 'C6F96922-51CD-484F-8A11-92181C47554F'
 league_id2 = 12132683
 league = League(league_id, year, espn_s2, SWID)
+scoringleaders = league._return_scoring_leaders()
 
 def get_stats(player, period):
     stats = player['stats']
     for item in stats:
         if item['id'] == period + '2019':
+            objectplayer['pts'] = item['appliedTotal']
+            objectplayer['avg_pts'] = item['appliedAverage']
             objectplayer['attempts'] = item['stats']['0']
-            objectplayer['attempts'] = item['stats']['0']
+            objectplayer['completed'] = item['stats']['1']
+            objectplayer['passing_yds'] = item['stats']['3']
+            objectplayer['completion_pct'] = item['stats']['21']
+            #guess objectplayer['interceptions'] = item['stats']['20']
+            objectplayer['passing_tds'] = item['stats']['4']
+            objectplayer['rushes'] = item['stats']['23']
+            objectplayer['rushing_yds'] = item['stats']['24']
+            objectplayer['rushing_tds'] = item['stats']['25']
             print(item['appliedTotal'])
 
 def create_dict():
@@ -41,4 +51,9 @@ stats_map = {
     '155':'',
     '175':''
 }
+
+class Player(dict):
+    def __init__(self, *arg, **kw):
+        super(Player, self).__init__(*arg, **kw)
+        self.__dict__ = lea
 
