@@ -3,7 +3,9 @@ import pprint
 import requests
 import json
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, Numeric
-import pandas
+import pandas as pd
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 league_id = 372479
 year = 2019
@@ -11,7 +13,7 @@ espn_s2 = 'AEAaGZHXv3kXMPXr4viwCvBYoTDLFWY8fQG7LQSLknXFpqPSSFRH2W0MSAXTTEGMWJg00
 SWID = 'C6F96922-51CD-484F-8A11-92181C47554F'
 league_id2 = 12132683
 league = League(league_id, year, espn_s2, SWID)
-scoringleaders = league._return_scoring_leaders()
+scoringleaders = league._return_scoring_leaders('1')
 
 def get_stats(player, period):
     stats = player['stats']
@@ -54,9 +56,14 @@ def setup_weekly_table():
                     Column('twopc', Integer),
                     Column('projection', Numeric),
                     Column('opponent', String),
-                    Column('fteam', String),
+                    Column('ff_team', String),
                     Column('onteam_status', String),
-                    Column('proteam', Integer)
+                    Column('on_team_id', Integer),
+                    Column('pro_team_id', Integer),
+                    Column('position_id', Integer),
+                    Column('jersey', Integer),
+                    Column('bye_wk', Integer),
+                    Column('position_name', String)
 
     )
 
@@ -99,15 +106,54 @@ class Player(dict):
         self.rushing_tds = self['player']['stats'][-1]['stats'].get('25', 0)
         self.rushing_yds = self['player']['stats'][-1]['stats'].get('24', 0)
         self.rushes = self['player']['stats'][-1]['stats'].get('23', 0)
-        self.recptions = self['player']['stats'][-1]['stats'].get('41', 0)
+        self.receptions = self['player']['stats'][-1]['stats'].get('41', 0)
         self.receiving_yds = self['player']['stats'][-1]['stats'].get('42', 0)
         self.receiving_tds = self['player']['stats'][-1]['stats'].get('43', 0)
         self.tar = self['player']['stats'][-1]['stats'].get('58', 0)
         self.twopc = self['player']['stats'][-1]['stats'].get('62', 0)
+        self.fg = self['player']['stats'][-1]['stats'].get('83', 0)
+        self.fga = self['player']['stats'][-1]['stats'].get('84', 0)
+        self.fg39 = self['player']['stats'][-1]['stats'].get('80',0)
+        self.fga39 = self['player']['stats'][-1]['stats'].get('81',0)
+        self.fg49 = self['player']['stats'][-1]['stats'].get('77',0)
+        self.fga49 = self['player']['stats'][-1]['stats'].get('78',0)
+        self.fg50 = self['player']['stats'][-1]['stats'].get('74',0)
+        self.fga50 = self['player']['stats'][-1]['stats'].get('75',0)
+        self.xp =self['player']['stats'][-1]['stats'].get('86',0)
+        self.xpa =self['player']['stats'][-1]['stats'].get('87',0)
 
         self.position_name = self.position_map()
         self.ff_team = self.ff_team_map()
         self.pro_team = self.pro_team_map()
+
+        self.df_dict = {
+            'id':self.id,
+            'name':self.name,
+            'on_team_id':self.on_team_id,
+            'pro_team_id':self.pro_team_id,
+            'jersey':self.jersey,
+            'position_id':self.position_id,
+            'bye_wk':self.bye_wk,
+            'pts':self.pts,
+            'avg_pts':self.avg_pts,
+            'attempts':self.attempts,
+            'completed':self.completed,
+            'passing_yds':self.passing_yds,
+            'completion_pct':self.completion_pct,
+            'interceptions':self.interceptions,
+            'passing_tds':self.passing_tds,
+            'rushing_tds':self.rushing_tds,
+            'rushing_yds':self.rushing_yds,
+            'rushes':self.rushes,
+            'receptions':self.receptions,
+            'receiving_yds':self.receiving_yds,
+            'receiving_tds':self.receiving_tds,
+            'tar':self.tar,
+            'twopc':self.twopc,
+            'position_name':self.position_id,
+            'ff_team':self.ff_team,
+            'pro_team':self.pro_team
+        }
 
     def position_map(self):
         position_name = {
@@ -145,7 +191,7 @@ class Player(dict):
             9:'MPB',
             10:'GM',
             11:'GGWL',
-            12:'HOG'
+            12:'HOG',
             13:'LUER'
         }
         return ff_team_map[self.on_team_id]
@@ -191,12 +237,48 @@ class Player(dict):
         }
         return pro_team_map[self.pro_team_id]
 
-    def load_to_sql(self, engine):
-        pass
+    def load_row(self, engine, table, player):
+        stmt = table.update().values(player)
+
+    def load_all(self):
+        engine = create_engine('sqlite+pysqlite:///sqlite3.db')
+        #Session = sessionmaker(bind=engine)
+        #session = Session()
+        #Base = declarative_base()
+        meta = MetaData()
+        weekly = Table('mytable', meta,
+                    Column('id', Integer, primary_key=True),
+                    Column('name', String),
+                    Column('pts', Numeric),
+                    Column('attempts', Integer),
+                    Column('completed', Integer),
+                    Column('passing_yds', Numeric),
+                    Column('completion_pct', Numeric),
+                    Column('intercetptions', Integer),
+                    Column('passing_tds', Integer),
+                    Column('rushes', Integer),
+                    Column('rushing_yds', Numeric),
+                    Column('rushing_tds', Integer),
+                    Column('rushing_tds', Integer),
+                    Column('fumbles', Integer),
+                    Column('receptions', Integer),
+                    Column('receiving_yds', Numeric),
+                    Column('receiving_tds', Integer),
+                    Column('tar', Integer),
+                    Column('twopc', Integer),
+                    Column('projection', Numeric),
+                    Column('opponent', String),
+                    Column('ff_team', String),
+                    Column('onteam_status', String),
+                    Column('on_team_id', Integer),
+                    Column('pro_team_id', Integer),
+                    Column('position_id', Integer),
+                    Column('jersey', Integer),
+                    Column('bye_wk', Integer),
+                    Column('position_name', String)
+
+                    )
+        weekly.create(engine)
 
 
-table = Table(
-    "week1", metadata,
-    Column("id")
-)
 
