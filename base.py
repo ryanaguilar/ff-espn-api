@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, 
 import pandas as pd
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import json
 
 league_id = 372479
 year = 2019
@@ -13,7 +14,7 @@ espn_s2 = 'AEAaGZHXv3kXMPXr4viwCvBYoTDLFWY8fQG7LQSLknXFpqPSSFRH2W0MSAXTTEGMWJg00
 SWID = 'C6F96922-51CD-484F-8A11-92181C47554F'
 league_id2 = 12132683
 league = League(league_id, year, espn_s2, SWID)
-scoringleaders = league._return_scoring_leaders('1')
+scoringleaders = league._return_scoring_leaders('2')
 
 def get_stats(player, period):
     stats = player['stats']
@@ -34,7 +35,7 @@ def get_stats(player, period):
 
 def setup_weekly_table():
     meta = MetaDatat()
-    mytable = Table('mytable', meta,
+    weekly = Table('mytable', meta,
                 Column('id', Integer, primary_key=True),
                 Column('name', String),
                 Column('pts', Numeric),
@@ -64,8 +65,9 @@ def setup_weekly_table():
                     Column('jersey', Integer),
                     Column('bye_wk', Integer),
                     Column('position_name', String)
+                   )
+    weekly.create(engine)
 
-    )
 
 def create_dict():
     pass
@@ -87,73 +89,86 @@ class Player(dict):
         self.name = self['player']['fullName']
         self.on_team_id = self['onTeamId']
         self.pro_team_id = self['player']['proTeamId']
-        self.jersey = self['player']['jersey']
-        self.stats = self['player']['stats']
+        self.jersey = self['player'].get('jersey')
+        #self.stats = self['player']['stats']
         self.position_id  = self['player']['defaultPositionId']
         try:
             self.bye_wk = self['player']['outlooks']['outlooksByeWeek']
         except KeyError:
             self.bye_wk = '0'
         #self. = self['player']['stats'][-1]['stats'][]
-        self.pts = self['player']['stats'][-1]['appliedTotal']
-        self.avg_pts = self['player']['stats'][-1].get('appliedAverage', 0)
-        self.attempts = self['player']['stats'][-1]['stats'].get('0', 0)
-        self.completed = self['player']['stats'][-1]['stats'].get('1', 0)
-        self.passing_yds = self['player']['stats'][-1]['stats'].get('3', 0)
-        self.completion_pct = self['player']['stats'][-1]['stats'].get('21', 0)
-        self.interceptions = self['player']['stats'][-1]['stats'].get('20', 0)
-        self.passing_tds = self['player']['stats'][-1]['stats'].get('4', 0)
-        self.rushing_tds = self['player']['stats'][-1]['stats'].get('25', 0)
-        self.rushing_yds = self['player']['stats'][-1]['stats'].get('24', 0)
-        self.rushes = self['player']['stats'][-1]['stats'].get('23', 0)
-        self.receptions = self['player']['stats'][-1]['stats'].get('41', 0)
-        self.receiving_yds = self['player']['stats'][-1]['stats'].get('42', 0)
-        self.receiving_tds = self['player']['stats'][-1]['stats'].get('43', 0)
-        self.tar = self['player']['stats'][-1]['stats'].get('58', 0)
-        self.twopc = self['player']['stats'][-1]['stats'].get('62', 0)
-        self.fg = self['player']['stats'][-1]['stats'].get('83', 0)
-        self.fga = self['player']['stats'][-1]['stats'].get('84', 0)
-        self.fg39 = self['player']['stats'][-1]['stats'].get('80',0)
-        self.fga39 = self['player']['stats'][-1]['stats'].get('81',0)
-        self.fg49 = self['player']['stats'][-1]['stats'].get('77',0)
-        self.fga49 = self['player']['stats'][-1]['stats'].get('78',0)
-        self.fg50 = self['player']['stats'][-1]['stats'].get('74',0)
-        self.fga50 = self['player']['stats'][-1]['stats'].get('75',0)
-        self.xp =self['player']['stats'][-1]['stats'].get('86',0)
-        self.xpa =self['player']['stats'][-1]['stats'].get('87',0)
+        try:
+            self.pts = self['player']['stats'][-1]['appliedTotal']
+            self.avg_pts = self['player']['stats'][-1].get('appliedAverage', 0)
+            self.attempts = self['player']['stats'][-1]['stats'].get('0', 0)
+            self.completed = self['player']['stats'][-1]['stats'].get('1', 0)
+            self.passing_yds = self['player']['stats'][-1]['stats'].get('3', 0)
+            self.completion_pct = self['player']['stats'][-1]['stats'].get('21', 0)
+            self.interceptions = self['player']['stats'][-1]['stats'].get('20', 0)
+            self.passing_tds = self['player']['stats'][-1]['stats'].get('4', 0)
+            self.rushing_tds = self['player']['stats'][-1]['stats'].get('25', 0)
+            self.rushing_yds = self['player']['stats'][-1]['stats'].get('24', 0)
+            self.rushes = self['player']['stats'][-1]['stats'].get('23', 0)
+            self.receptions = self['player']['stats'][-1]['stats'].get('41', 0)
+            self.receiving_yds = self['player']['stats'][-1]['stats'].get('42', 0)
+            self.receiving_tds = self['player']['stats'][-1]['stats'].get('43', 0)
+            self.tar = self['player']['stats'][-1]['stats'].get('58', 0)
+            self.twopc = self['player']['stats'][-1]['stats'].get('62', 0)
+            self.fg = self['player']['stats'][-1]['stats'].get('83', 0)
+            self.fga = self['player']['stats'][-1]['stats'].get('84', 0)
+            self.fg39 = self['player']['stats'][-1]['stats'].get('80',0)
+            self.fga39 = self['player']['stats'][-1]['stats'].get('81',0)
+            self.fg49 = self['player']['stats'][-1]['stats'].get('77',0)
+            self.fga49 = self['player']['stats'][-1]['stats'].get('78',0)
+            self.fg50 = self['player']['stats'][-1]['stats'].get('74',0)
+            self.fga50 = self['player']['stats'][-1]['stats'].get('75',0)
+            self.xp =self['player']['stats'][-1]['stats'].get('86',0)
+            self.xpa =self['player']['stats'][-1]['stats'].get('87',0)
 
-        self.position_name = self.position_map()
-        self.ff_team = self.ff_team_map()
-        self.pro_team = self.pro_team_map()
+            self.position_name = self.position_map()
+            self.ff_team = self.ff_team_map()
+            self.pro_team = self.pro_team_map()
 
-        self.df_dict = {
-            'id':self.id,
-            'name':self.name,
-            'on_team_id':self.on_team_id,
-            'pro_team_id':self.pro_team_id,
-            'jersey':self.jersey,
-            'position_id':self.position_id,
-            'bye_wk':self.bye_wk,
-            'pts':self.pts,
-            'avg_pts':self.avg_pts,
-            'attempts':self.attempts,
-            'completed':self.completed,
-            'passing_yds':self.passing_yds,
-            'completion_pct':self.completion_pct,
-            'interceptions':self.interceptions,
-            'passing_tds':self.passing_tds,
-            'rushing_tds':self.rushing_tds,
-            'rushing_yds':self.rushing_yds,
-            'rushes':self.rushes,
-            'receptions':self.receptions,
-            'receiving_yds':self.receiving_yds,
-            'receiving_tds':self.receiving_tds,
-            'tar':self.tar,
-            'twopc':self.twopc,
-            'position_name':self.position_id,
-            'ff_team':self.ff_team,
-            'pro_team':self.pro_team
+            self.df_dict = {
+                'id':self.id,
+                'name':self.name,
+                'on_team_id':self.on_team_id,
+                'pro_team_id':self.pro_team_id,
+                'jersey':self.jersey,
+                'position_id':self.position_id,
+                'bye_wk':self.bye_wk,
+                'pts':self.pts,
+                'avg_pts':self.avg_pts,
+                'attempts':self.attempts,
+                'completed':self.completed,
+                'passing_yds':self.passing_yds,
+                'completion_pct':self.completion_pct,
+                'interceptions':self.interceptions,
+                'passing_tds':self.passing_tds,
+                'rushing_tds':self.rushing_tds,
+                'rushing_yds':self.rushing_yds,
+                'rushes':self.rushes,
+                'receptions':self.receptions,
+                'receiving_yds':self.receiving_yds,
+                'receiving_tds':self.receiving_tds,
+                'tar':self.tar,
+                'twopc':self.twopc,
+                'position_name':self.position_map(),
+                'ff_team':self.ff_team_map(),
+                'pro_team':self.pro_team_map(),
+                'fg':self.fg,
+                'fga':self.fga,
+                'fg39':self.fg39,
+                'fga39':self.fga39,
+                'fg49':self.fg49,
+                'fga49':self.fga49,
+                'fg50':self.fg50,
+                'fga50':self.fga50,
+                'xp':self.xp,
+                'xpa':self.xpa
         }
+        except KeyError:
+            self.df_dict = {}
 
     def position_map(self):
         position_name = {
@@ -281,4 +296,12 @@ class Player(dict):
         weekly.create(engine)
 
 
+def fill_list(scoringleaders):
+    players = scoringleaders['players']
+    big_list = [Player(players, leader['player']['fullName']).df_dict for leader in players]
+    return big_list
+
+def list_to_csv(big_list, file_name):
+    df = pd.DataFrame(data=big_list)
+    df.to_csv(file_name)
 
