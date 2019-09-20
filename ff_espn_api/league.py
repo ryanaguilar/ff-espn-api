@@ -33,7 +33,7 @@ class League(object):
     def __init__(self, league_id: int, year: int, espn_s2=None, swid=None):
         self.league_id = league_id
         self.year = year
-        # older season data is stored at a different endpoint 
+        # older season data is stored at a different endpoint
         if year < 2018:
             self.ENDPOINT = "https://fantasy.espn.com/apis/v3/games/ffl/leagueHistory/" + str(league_id) + "?seasonId=" + str(year)
         else:
@@ -69,7 +69,7 @@ class League(object):
         else:
             self.current_week = data['status']['currentMatchupPeriod']
         self.nfl_week = data['status']['latestScoringPeriod']
-        
+
 
         self._fetch_settings()
         self._fetch_players()
@@ -111,7 +111,7 @@ class League(object):
         team_roster = {}
         for team in data['teams']:
             team_roster[team['id']] = team['roster']
-        
+
         for team in teams:
             for member in members:
                 # For league that is not full the team will not have a owner field
@@ -151,7 +151,7 @@ class League(object):
 
         data = r.json() if self.year > 2017 else r.json()[0]
         self.settings = Settings(data['settings'])
-    
+
     def _fetch_players(self):
         params = {
             'scoringPeriodId': 0,
@@ -182,11 +182,11 @@ class League(object):
         checkRequestStatus(self.status)
 
         data = r.json() if self.year > 2017 else r.json()[0]
-        
+
         # League has not drafted yet
         if not data['draftDetail']['drafted']:
             return
-        
+
         picks = data['draftDetail']['picks']
         for pick in picks:
             team = self.get_team_data(pick['teamId'])
@@ -215,7 +215,7 @@ class League(object):
         team_roster = {}
         for team in data['teams']:
             team_roster[team['id']] = team['roster']
-        
+
         for team in self.teams:
             roster = team_roster[team.team_id]
             team._fetch_roster(roster)
@@ -227,7 +227,7 @@ class League(object):
     def top_scorer(self) -> Team:
         most_pf = sorted(self.teams, key=lambda x: x.points_for, reverse=True)
         return most_pf[0]
-    
+
     def least_scorer(self) -> Team:
         least_pf = sorted(self.teams, key=lambda x: x.points_for, reverse=False)
         return least_pf[0]
@@ -243,7 +243,7 @@ class League(object):
         top_scored_tup = [(i, j) for (i, j) in zip(self.teams, top_week_points)]
         top_tup = sorted(top_scored_tup, key=lambda tup: int(tup[1]), reverse=True)
         return top_tup[0]
-    
+
     def least_scored_week(self) -> Tuple[Team, int]:
         least_week_points = []
         for team in self.teams:
@@ -257,7 +257,7 @@ class League(object):
             if team_id == team.team_id:
                 return team
         return None
-    
+
     # TODO League Trades, checks if any trades happened recently
     def league_trades(self):
         pass
@@ -285,9 +285,9 @@ class League(object):
                     matchup.home_team = team
                 elif matchup.away_team == team.team_id:
                     matchup.away_team = team
-        
+
         return matchups
-    
+
     def box_scores(self, week: int = None) -> List[BoxScore]:
         '''Returns list of box score for a given week'''
         if self.year < 2018:
@@ -299,7 +299,7 @@ class League(object):
             'view': 'mMatchupScore',
             'scoringPeriodId': week,
         }
-        
+
         filters = {"schedule":{"filterMatchupPeriodIds":{"value":[week]}}}
         headers = {'x-fantasy-filter': json.dumps(filters)}
 
@@ -319,7 +319,7 @@ class League(object):
                 elif matchup.away_team == team.team_id:
                     matchup.away_team = team
         return box_data
-        
+
     def power_rankings(self, week):
         '''Return power rankings for any week'''
 
@@ -348,11 +348,11 @@ class League(object):
             raise Exception('Cant use free agents before 2018')
         if not week:
             week = self.current_week
-        
+
         slot_filter = []
         if position and position in POSITION_MAP:
             slot_filter = [POSITION_MAP[position]]
-        
+
         params = {
             'view': 'kona_player_info',
             'scoringPeriodId': week,
@@ -367,16 +367,32 @@ class League(object):
         players = r.json()['players']
 
         return [Player(player) for player in players]
-           
-    def _return_scoring_leaders(self):
+
+    def _return_scoring_leaders(self, scoring_period):
         params = {
-            'scoringPeriodId': 0,
+            'scoringPeriodId': scoring_period,
             'view': 'players_wl',
         }
 
         #endpoint = 'https://fantasy.espn.com/apis/v3/games/ffl/seasons/' + str(self.year) + '/players'
-        endpoint = 'https://fantasy.espn.com/apis/v3/games/ffl/seasons/2019/segments/0/leagues/372479?scoringPeriodId=1&view=kona_player_info'
-        r = requests.get(endpoint, params=params, cookies=self.cookies)
+        endpoint = 'https://fantasy.espn.com/apis/v3/games/ffl/seasons/2019/segments/0/leagues/372479?scoringPeriodId=' + scoring_period + '&view=kona_player_info'
+        headers1 = {'x-fantasy-filter':
+                       {'players':
+                            {'filterSlotIds':
+                                 {'value':
+                                      [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,23,24]},
+                             'filterStatsForCurrentSeasonScoringPeriodId':
+                                 {'value':[2]},
+                             'limit':50,
+                             'offset':0,
+                             'sortAppliedStatTotalForScoringPeriodId':
+                                 {'sortAsc':False,
+                                  'sortPriority':1,
+                                  'value':scoring_period},
+                             'filterRanksForScoringPeriodIds':
+                                 {'value':[scoring_period]},'filterRanksForRankTypes':{'value':['PPR']}}}}
+        headers2 = {'x-fantasy-filter':'{"players": {"filterSlotIds": {"value":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,23,24]},"filterStatsForCurrentSeasonScoringPeriodId":{"value":[2]},"limit":50,"offset":0,"sortAppliedStatTotalForScoringPeriodId":{"sortAsc":false,"sortPriority":1,"value":2},"filterRanksForScoringPeriodIds":{"value":[2]},"filterRanksForRankTypes":{"value":["PPR"]}}}'}
+        r = requests.get(endpoint, headers=headers2, params=params, cookies=self.cookies)
         self.status = r.status_code
 
         checkRequestStatus(self.status)
